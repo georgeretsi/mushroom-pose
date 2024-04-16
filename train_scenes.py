@@ -11,17 +11,11 @@ from models.utils import process_input
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-name_prefix = 'fnl'
+name_prefix = 'mpose_temp'
 
 from models.resunet import ResUNet3D
 
-# model_path = 'ResUNetBN2C-32feat-3DMatch.pth'
-# checkpoint = torch.load(model_path)
-# backbone_model.load_state_dict(checkpoint['state_dict'])
 model = ResUNet3D(1, 5)
-#odel_path = './models/ResUNetBN2C-32feat-3DMatch.pth'
-#checkpoint = torch.load(model_path)
-#model.backbone.load_state_dict(checkpoint['state_dict'])
 model.load_state_dict(torch.load('fnl_model.pt'))
 model = model.cuda()
 
@@ -33,7 +27,6 @@ Kdisplay = 100
 voxel_size = 0.005
 
 optimizer = torch.optim.Adam(list(model.parameters()), 1e-3)
-#optimizer = torch.optim.Adam(list(models.parameters()), 1e-3)
 optimizer.zero_grad()
 scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [Niter//2])
 
@@ -45,7 +38,6 @@ for i in range(Niter):
     #lower_bound = 5
     upper_bound = 5 +  1 + int(50 * i / Niter) # up to 45 mushrooms in a scene in linear progression
     lower_bound = max(5, upper_bound - 10)
-    #upper_bound = 50
 
 
     scene_pcd, rot_vecs, _, labels, instances, ctargets, confs = scene_generation(np.random.randint(lower_bound, upper_bound),
@@ -57,9 +49,6 @@ for i in range(Niter):
     tinput, point_inds, _ = process_input(xyz=np.asarray(scene_pcd.points),
                                           voxel_size=np.random.uniform(.9, 1.1) * voxel_size,
                                           device=device)
-
-    #reduced_points = tinput.C[:, :3]
-
 
     encoded_features = model(tinput)
 

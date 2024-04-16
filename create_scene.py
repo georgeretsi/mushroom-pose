@@ -8,37 +8,8 @@ import numpy as np
 
 def augment_template(template_pcd, valid_ids=None, voxel_size=0.001):
 
-    #N = np.random.randint(5000, 15000)
-
-    # sample N points
-
-
-    #template_pcd = mesh.sample_points_uniformly(N)
-    #template_pcd = template_pcd.voxel_down_sample(voxel_size=voxel_size)
-    #template_pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=10.0*voxel_size, max_nn=30))
-
     points = np.asarray(template_pcd.points)
 
-    #points = ldeform(points, template_pcd.normals, 1.0 * voxel_size)
-
-    '''
-    # simple rotation + scale
-    r = np.asarray(
-        [np.random.uniform(-.25, .25) * np.pi,
-         np.random.uniform(-.25, .25) * np.pi,
-         np.random.uniform(-.5, .5) * np.pi]
-    )
-
-    R = o3d.geometry.get_rotation_matrix_from_axis_angle(r)
-
-    T = np.random.uniform(size=(3)) * 1000 * voxel_size
-
-    scales = np.random.uniform(.99, 1.01) * np.asarray([
-        np.random.uniform(.98, 1.02),
-        np.random.uniform(.98, 1.02),
-        np.random.uniform(.98, 1.02)
-    ])
-    '''
 
     scales = np.random.uniform(.99, 1.01) * np.asarray([
         np.random.uniform(.95, 1.05),
@@ -81,14 +52,7 @@ def augment_template(template_pcd, valid_ids=None, voxel_size=0.001):
 
     target_ids = np.concatenate([target_ids, np.zeros(K)])
 
-    #'''
-
-    #mesh.compute_vertex_normals()
-    #o3d.visualization.draw_geometries([pcd])
-
-    #target = np.concatenate([T, r / np.pi, scales])
-
-    return pcd, target_ids #, ids, target #, template_pcd, target
+    return pcd, target_ids 
 
 def compute_max_r(obj):
     r_x = max(abs(obj.get_center()[0] - obj.get_max_bound()[0]),
@@ -102,8 +66,6 @@ def compute_max_r(obj):
 mushroom_filename = "./templates/mushrooms/mushroom_basic.obj"
 global_cap_zthres = .25
 
-# ground template
-ground_filename = "./templates/dirty-ground-floor-01/ground.obj"
 
 #number_of_mushrooms = np.random.randint(5, 15)
 position_bias = 2.00
@@ -125,22 +87,6 @@ mushroom_mesh.scale(0.005, center=mushroom_mesh.get_center())
 mushroom_mesh.translate((0, 0, 0.3), relative=False)
 
 
-'''
-pp = np.asarray(mushroom_mesh.vertices)
-ids = np.where(pp[:, -1] > .3)[0]
-mtmp = o3d.geometry.PointCloud()
-mtmp.points = o3d.utility.Vector3dVector(pp[ids])
-mbbox = mtmp.get_oriented_bounding_box()
-mbbox.color = [1, 0, 0]
-'''
-
-#o3d.visualization.draw_geometries([mushroom_mesh, mbbox])
-
-ground_mesh = o3d.io.read_triangle_mesh(ground_filename, True)
-ground_mesh.translate((0, 0, 0), relative=False)
-ground_mesh = ground_mesh.rotate(ground_mesh.get_rotation_matrix_from_xyz((np.pi + np.pi / 6, np.pi / 26, 0)),
-                                 center=ground_mesh.get_center())
-
 # distractors !!!
 cube_mesh = o3d.geometry.TriangleMesh().create_box()
 cube_mesh.scale(0.1, center=cube_mesh.get_center())
@@ -156,12 +102,6 @@ cmap = cm.get_cmap('tab10')
 
 ground_path = "./templates/ground/"
 ground_files = [ground_path+filename for filename in os.listdir(ground_path) if filename.endswith('.ply')]
-
-#ground_pcds = []
-#for filename in os.listdir(ground_path):
-#    if filename.endswith('.ply'):
-#        ground_pcds += [o3d.io.read_point_cloud(ground_path + filename)]
-#ngrounds = len(ground_pcds)
 
 def single_mushroom_feats(voxel_size=0.05):
 
@@ -218,8 +158,6 @@ def random_hidden_points_removal(tmp_pcd):
 
 
 def scene_generation(number_of_mushrooms, voxel_size=0.05, loosen_value = .85, add_distractors=True):
-
-    #bvoxel_size = np.random.uniform(0.3, .8) * voxel_size
     bvoxel_size = np.random.uniform(0.7, 1.25) * voxel_size
 
     cultivation = []
@@ -232,12 +170,6 @@ def scene_generation(number_of_mushrooms, voxel_size=0.05, loosen_value = .85, a
     rot_vecs = []
 
     bboxes = []
-
-    #tt = time.time()
-
-    # randomly augment ground mesh
-    #tground_mesh = copy.deepcopy(ground_mesh)
-    #tground_pcd = copy.deepcopy(ground_pcds[np.random.randint(ngrounds)])
 
     tground_pcd = o3d.io.read_point_cloud(ground_files[np.random.randint(len(ground_files))])
     if add_distractors:
@@ -259,17 +191,9 @@ def scene_generation(number_of_mushrooms, voxel_size=0.05, loosen_value = .85, a
             xy = position_bias * np.random.uniform(-1, 1, size=2)
             tmesh.translate(list(xy) + [-scale * 0.01])
 
-            #tmesh.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=10 * voxel_size, max_nn=30))
-            #npoints = ldeform(np.asarray(tmesh.points), tmesh.normals, voxel_size * np.random.uniform(1, 20), .1)  # - np.asarray(ground_pcd.points)
-            #tmesh.points = o3d.utility.Vector3dVector(npoints)
 
-            #tground_mesh += tmesh
             tground_pcd += tmesh.sample_points_uniformly(int(scale * np.random.randint(100, 500)))
-        #o3d.visualization.draw_geometries([tground_mesh])
 
-    #print(time.time() - tt)
-
-    #tt = time.time()
     scales = []
     rotations = []
     translations = []
@@ -280,30 +204,13 @@ def scene_generation(number_of_mushrooms, voxel_size=0.05, loosen_value = .85, a
         #tt = time.time()
 
         mushroom = copy.deepcopy(mushroom_mesh)
-        #mushroom, _, _ = augment_template(mushroom_mesh, 0.005)
 
-
-        # magic threshold !!
-        #tpcd = copy.deepcopy(mushroom)
-        #pp = np.asarray(tpcd.vertices)
-        #ids = np.where(pp[:, -1] > .3)[0]
-
-        # Apply random transform : scale
 
         scale = round(random.uniform(scale_min, scale_max), 2)
         mushroom.scale(scale, center=mushroom.get_center())
         scales.append(scale)
         mushroom.translate((0, 0, scale * 0.3), relative=False)
-       # if scale < 1.0:
-       #     mushroom.translate((0, 0, scale * 0.3), relative=False)
-        #else:
-        #    mushroom.translate((0, 0, scale * 0.3), relative=False)
 
-        # Apply random transform : rotation
-        #x_rot = round(random.uniform(-rotation_threshold, rotation_threshold), 2)
-        #y_rot = round(random.uniform(-rotation_threshold, rotation_threshold), 2)
-        #z_rot = round(random.uniform(-rotation_threshold, rotation_threshold), 2)
-        #R = mushroom.get_rotation_matrix_from_xyz((x_rot, y_rot, z_rot))
         rotv = np.asarray([rotation_threshold, rotation_threshold, np.pi]) * np.random.uniform(-1, 1, size=3)
         R = mushroom.get_rotation_matrix_from_xyz(rotv)
         mushroom.rotate(R, center=mushroom.get_center())
@@ -316,10 +223,6 @@ def scene_generation(number_of_mushrooms, voxel_size=0.05, loosen_value = .85, a
         translations.append([x, y])
         r_max = compute_max_r(mushroom)
 
-        #print(time.time() - tt)
-
-
-        # Check if an occlusion was created and move it???
         no_collision = True
         for j, previous_mushroom in enumerate(cultivation):
             if np.linalg.norm(mushroom.get_center() - previous_mushroom.get_center()) < \
@@ -393,30 +296,14 @@ def scene_generation(number_of_mushrooms, voxel_size=0.05, loosen_value = .85, a
 
             cnt += 1
 
-    #print(time.time() - tt)
-
-    #tt = time.time()
-
-    #ground_pcd = tground_mesh.sample_points_uniformly(np.random.randint(30000, 50000))
     ground_pcd = tground_pcd.voxel_down_sample(voxel_size=np.random.uniform(.8, 1.2) * bvoxel_size)
-    #ground_pcd.paint_uniform_color([.1, .1, .1])
-
-    #ground_pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=10 * voxel_size, max_nn=30))
-    #npoints =  ldeform(np.asarray(ground_pcd.points), ground_pcd.normals, voxel_size * np.random.uniform(5, 20), .25) #- np.asarray(ground_pcd.points)
-    #ground_pcd.points = o3d.utility.Vector3dVector(npoints)
 
     scene_pcd += ground_pcd
 
-    #print(time.time() - tt)
 
-    #tt = time.time()
-
-    # noise under voxel size
-    #'''
     scene_points = np.asarray(scene_pcd.points)
     scene_points += .1 * voxel_size * np.random.randn(scene_points.shape[0], 3)
     scene_pcd.points = o3d.utility.Vector3dVector(np.asarray(scene_points))
-    #'''
 
     labels += [np.zeros(len(ground_pcd.points))]
     labels = np.concatenate(labels)
@@ -427,13 +314,7 @@ def scene_generation(number_of_mushrooms, voxel_size=0.05, loosen_value = .85, a
     conf += [-np.ones(len(ground_pcd.points))]
     conf = np.concatenate(conf)
 
-    #tscene_pcd = copy.deepcopy(scene_pcd)
-    #label_color = np.asarray([[.1, .1, .1] if label==0 else [1, .0, .0] for label in labels])
-    #tscene_pcd.colors = o3d.utility.Vector3dVector(label_color)
-    #o3d.visualization.draw_geometries([tscene_pcd])
-
     # super fine-tweaked camera locations
-
     if np.random.rand() > .5:
         camera_location = [0.0, 0.0, .5] + np.random.uniform(.0, .5, size=[3])
         camera_location = 10 * camera_location / np.linalg.norm(camera_location)

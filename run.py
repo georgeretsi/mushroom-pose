@@ -5,6 +5,8 @@ import open3d as o3d
 # visualization func
 import matplotlib
 
+o3d.visualization.webrtc_server.enable_webrtc()
+
 def visualize_features(feats, thres=.5, mode='center'):
 
     # mode can be either 'center' or 'values'
@@ -24,7 +26,8 @@ def visualize_features(feats, thres=.5, mode='center'):
     tcolors = np.asarray([[c, .0, .0] if b else [.2, .8, .2] for c, b in zip(pred_orient, vmask)])
     npcd.colors = o3d.utility.Vector3dVector(tcolors)
 
-    o3d.visualization.draw_geometries([npcd])
+    #o3d.visualization.draw_geometries([npcd])
+    o3d.visualization.draw(npcd)
 
 def visualize_clusters(feats, pclasses):
     cmap = matplotlib.cm.get_cmap('tab20')
@@ -57,7 +60,12 @@ def visualize_clusters(feats, pclasses):
 
             mpcds += [(ii, tpcd)]
 
-    o3d.visualization.draw_geometries([tpcd for _, tpcd in mpcds])
+    #o3d.visualization.draw_geometries([tpcd for _, tpcd in mpcds])
+    vis_pcd = o3d.geometry.PointCloud()
+    for _, tpcd in mpcds:
+        vis_pcd += tpcd
+
+    o3d.visualization.draw(vis_pcd)
 
 # plane segmentation
 
@@ -181,7 +189,8 @@ def visualize_ellipsoids(estimates, scene_pcd):
 
         vtmps += tmp_mesh
 
-    o3d.visualization.draw_geometries([scene_pcd, vtmps])
+    o3d.visualization.draw([scene_pcd, vtmps])
+    #o3d.visualization.draw_geometries([scene_pcd, vtmps])
 
 # pose estimation
 def ellipsoid_pose_estimation(feats, pclasses, voxel_size):
@@ -332,6 +341,8 @@ def run_pipeline(pcd_file, voxel_size, cthres=.5, device='cuda:0', visualize=Fal
 
     # load pointcloud and downsample it
     if  'real_mushrooms_pcds' in pcd_file:
+
+        # tweak for orientation of scenes
         tpcd = o3d.io.read_point_cloud(pcd_file)
         pp = np.asarray(tpcd.points)
         ids = np.where(np.linalg.norm(pp, axis=-1) < 0.9)[0]
@@ -363,7 +374,7 @@ def run_pipeline(pcd_file, voxel_size, cthres=.5, device='cuda:0', visualize=Fal
     # load model
     #model = load_model('nn_model.pt', device)
     #model = load_model('fnl_model.pt', device)
-    model = load_model('nn_model.pt', device)
+    model = load_model('fnl_model.pt', device)
 
     feats, point_inds = get_features(model, scene_pcd_cleared, voxel_size, device)
 
@@ -375,18 +386,18 @@ def run_pipeline(pcd_file, voxel_size, cthres=.5, device='cuda:0', visualize=Fal
 
     pclasses = segment_clusters(feats, voxel_size, thres=cthres)
 
-    if visualize:
-        visualize_clusters(feats, pclasses)
+    #if visualize:
+    #    visualize_clusters(feats, pclasses)
 
     pclasses = color_postprocessing(feats, pclasses, voxel_size)
 
-    if visualize:
-        visualize_clusters(feats, pclasses)
+    #if visualize:
+    #    visualize_clusters(feats, pclasses)
 
     pose_estimations = ellipsoid_pose_estimation(feats, pclasses, voxel_size)
 
-    if visualize:
-        visualize_ellipsoids(pose_estimations, scene_pcd)
+    #if visualize:
+    #    visualize_ellipsoids(pose_estimations, scene_pcd)
 
     mushroom_pcd = get_ellipsoid_template() #get_mushroom_template()
     #mushroom_pcd.scale(1/pose_estimations[0][1]['s'].mean(), center=mushroom_pcd.get_center())
@@ -400,14 +411,11 @@ def run_pipeline(pcd_file, voxel_size, cthres=.5, device='cuda:0', visualize=Fal
 
     pose_estimations = finetune_pose_estimation(feats, mfeats, pclasses, pose_estimations, voxel_size)
 
-    if visualize:
-        visualize_ellipsoids(pose_estimations, scene_pcd)
+    #if visualize:
+    #    visualize_ellipsoids(pose_estimations, scene_pcd)
+    visualize_ellipsoids(pose_estimations, scene_pcd)
 
     return pose_estimations
-
-
-
-
 
 
 
@@ -417,8 +425,8 @@ if __name__ == '__main__':
     #pcd_file = './reconstructed_pcds/3.ply'
     #pcd_file = '../tmp_data/cadcam_stereo/s1.ply'
 
-    pcd_file = './real_mushrooms_pcds/reconstruction_pcd_25.pcd'
+    pcd_file = './real_mushrooms_pcds/reconstruction_pcd_20.pcd'
 
     voxel_size = 0.004
-    run_pipeline(pcd_file, voxel_size, cthres=.5, visualize=True, plane_removal=False)
+    run_pipeline(pcd_file, voxel_size, cthres=.5, visualize=False, plane_removal=False)
 
