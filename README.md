@@ -1,35 +1,17 @@
-# SMIRK: 3D Facial Expressions through Analysis-by-Neural-Synthesis
+# Mushroom Segmentation and 3D Pose Estimation from Point Clouds using Fully Convolutional Geometric Features and Implicit Pose Encoding
 
-This is the official PyTorch implementation of SMIRK:
-This repository is the official implementation of the [CVPR 2024](https://cvpr.thecvf.com) paper [3D Facial Expressions through Analysis-by-Neural Synthesis](https://arxiv.org/abs/2404.04104).
-
-
-<p align="center">
-  <a href='https://arxiv.org/abs/2404.04104' style='padding-left: 0.5rem;'>
-    <img src='https://img.shields.io/badge/arXiv-2404.04104-brightgreen' alt='arXiv'>
-  </a>
-  <!-- <a href=''>
-    <img src='https://img.shields.io/badge/PDF-Paper-2D963D?style=flat&logo=Adobe-Acrobat-Reader&logoColor=red' alt='Paper PDF'>
-  </a>  -->
-  <!-- <a href=''>
-    <img src='https://img.shields.io/badge/PDF-Sup.Mat.-2D963D?style=flat&logo=Adobe-Acrobat-Reader&logoColor=red' alt='Sup. Mat. PDF'>
-  </a>      -->
-  <a href='https://www.youtube.com/watch?v=8ZVgr41wxbk' style='padding-left: 0.5rem;'>
-    <img src='https://img.shields.io/badge/Video-Youtube-red?style=flat&logo=youtube&logoColor=red' alt='Youtube Video'>
-  </a>
-  <a href='https://georgeretsi.github.io/smirk/' style='padding-left: 0.5rem;'>
-    <img src='https://img.shields.io/badge/Website-Project Page-blue?style=flat&logo=Google%20chrome&logoColor=blue' alt='Project Page'>
-  </a>
-</p>
+This is the official PyTorch implementation of the ["Mushroom Segmentation and 3D Pose Estimation from Point Clouds using Fully Convolutional Geometric Features and Implicit Pose Encoding"](https://openaccess.thecvf.com/content/CVPR2023W/AgriVision/papers/Retsinas_Mushroom_Segmentation_and_3D_Pose_Estimation_From_Point_Clouds_Using_CVPRW_2023_paper.pdf) paper appeared in CVPRW 2023 (Vision for Agriculture).
 
 <p align="center"> 
-<img src="samples/cover.png">
-SMIRK reconstructs 3D faces from monocular images with facial geometry that faithfully recover extreme, asymmetric, and subtle expressions.
+<img src="samples/overview2.pdf">
+*Overview of the proposed system. Given a point cloud input of a mushroom scene, the proposed deep network predicts the three categories of task-relevant information. Using a mode-seeking clustering over the predicted centers we can provide the instance segmentation result. Then each mushroom region is processed as an ellipsoid structure and the corresponding 3D pose is estimated.*
 </p>
 
 
 ## Installation
-You need to have a working version of PyTorch and Pytorch3D installed. We provide a `requirements.txt` file that can be used to install the necessary dependencies for a Python 3.9 setup with CUDA 11.7:
+The deep learning backbone is a sparse 3D convolution network as in [Fully Convolutional Geometric Features](https://github.com/chrischoy/FCGF).
+This network requires to have a working version of [Minkowski Engine](https://github.com/NVIDIA/MinkowskiEngine).
+The following commands provided a working conda enviroment for a Python 3.9 setup with CUDA 11.7:
 
 ```bash
 conda create -n mpose python=3.9
@@ -42,21 +24,45 @@ pip install -U git+https://github.com/NVIDIA/MinkowskiEngine -v --no-deps --inst
 pip install open3d 
 ```
 
-Then, in order to download the required models, run:
-
-```bash
-bash quick_install.sh
-```
-*The above installation includes downloading the [FLAME](https://flame.is.tue.mpg.de/) model. This requires registration. If you do not have an account you can register at [https://flame.is.tue.mpg.de/](https://flame.is.tue.mpg.de/)*
-
+If Minkowski Engine installation fails, check out the alternatives in the original [repo](https://github.com/NVIDIA/MinkowskiEngine).
 
 
 ## Demo 
-We provide a demo that can be used to test the model on a single image or a video file. 
+We provide a demo that can be used to test a pretrained model on some examples of pointclouds. 
 
 ```bash
-python demo.py --input_path samples/test_image2.png --out_path results/ --checkpoint pretrained_models/SMIRK_em1.pt --crop
+python run.py example_pcds/example_2.pcd trained_model.pt
+```
+
+The first argument is the path to the point cloud input, while the second is the path to a trained model. Both a set of inputs, as well as an already trained model are provided.
+
+This code provides a visualization of the final detection through [Open3D](https://www.open3d.org) library. To also support headless executions, the visualization is depicted on localhost:8888 and a port forwarding is required. 
+## Training
+
+Further training can be performed via:
+
+```bash
+python train_scenes.pt
+```
+
+This code generates on the fly synthetic mushroom scenes and train the 3D model on them.
+
+## Citation
+If you find this work useful, please consider citing:
+
+```bibtex
+@inproceedings{retsinas2023mushroom,
+  title={Mushroom Segmentation and 3D Pose Estimation from Point Clouds using Fully Convolutional Geometric Features and Implicit Pose Encoding},
+  author={Retsinas, George and Efthymiou, Niki and Maragos, Petros},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={6263--6270},
+  year={2023}
+}
 ```
 
 
-## Training
+## Acknowledgements 
+We acknowledge the following repositories and papers that were used in this work:
+
+- [Fully Convolutional Geometric Features](https://github.com/chrischoy/FCGF)
+- [Minkowski Engine](https://github.com/NVIDIA/MinkowskiEngine)
