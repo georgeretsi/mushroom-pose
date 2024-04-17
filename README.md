@@ -3,7 +3,9 @@
 This is the official PyTorch implementation of the ["Mushroom Segmentation and 3D Pose Estimation from Point Clouds using Fully Convolutional Geometric Features and Implicit Pose Encoding"](https://openaccess.thecvf.com/content/CVPR2023W/AgriVision/papers/Retsinas_Mushroom_Segmentation_and_3D_Pose_Estimation_From_Point_Clouds_Using_CVPRW_2023_paper.pdf) paper appeared in CVPRW 2023 (Vision for Agriculture).
 
 <p align="center"> 
-<img src="overview.png">
+<img src="overview.png"> 
+</p>
+<p align="center"> 
 Overview of the proposed system. Given a point cloud input of a mushroom scene, the proposed deep network predicts the three categories of task-relevant information. Using a mode-seeking clustering over the predicted centers we can provide the instance segmentation result. Then each mushroom region is processed as an ellipsoid structure and the corresponding 3D pose is estimated.
 </p>
 
