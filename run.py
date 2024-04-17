@@ -1,3 +1,5 @@
+import os
+import sys
 import  numpy as np
 import torch
 import open3d as o3d
@@ -337,27 +339,11 @@ def color_postprocessing(scene_feats, pclasses, voxel_size):
     return pclasses
 
 # main pipeline function
-def run_pipeline(pcd_file, voxel_size, cthres=.5, device='cuda:0', visualize=False, plane_removal=True, color_preprocessing=True):
+def run_pipeline(pcd_file, model_path, voxel_size, cthres=.5, device='cuda:0', visualize=False, plane_removal=True, color_preprocessing=True):
 
     # load pointcloud and downsample it
-    if  'real_mushrooms_pcds' in pcd_file:
-
-        # tweak for orientation of scenes
-        tpcd = o3d.io.read_point_cloud(pcd_file)
-        pp = np.asarray(tpcd.points)
-        ids = np.where(np.linalg.norm(pp, axis=-1) < 0.9)[0]
-        tpcd = tpcd.select_by_index(ids)
-        tpcd = tpcd.voxel_down_sample(voxel_size)
-
-        from scipy.spatial.transform import Rotation
-        r = Rotation.from_euler('zyx', [0.0 * np.pi, np.pi, 0.0 * np.pi]).as_matrix()
-        tpcd.rotate(r, center=(0,0,0))
-        #tpcd = remove_unconsistent_points(tpcd)
-        scene_pcd = tpcd.remove_statistical_outlier(15, 2.0)[0]
-    else:
-        scene_pcd = o3d.io.read_point_cloud(pcd_file)
-        scene_pcd.points = o3d.utility.Vector3dVector(1.0 * np.asarray(scene_pcd.points))
-        scene_pcd = scene_pcd.voxel_down_sample(voxel_size=voxel_size)
+    tpcd = o3d.io.read_point_cloud(pcd_file)
+    scene_pcd = tpcd.voxel_down_sample(voxel_size=voxel_size)
 
     if plane_removal:
         scene_pcd_cleared, _, _ = remove_main_plane(scene_pcd, voxel_size)
@@ -372,9 +358,7 @@ def run_pipeline(pcd_file, voxel_size, cthres=.5, device='cuda:0', visualize=Fal
 
 
     # load model
-    #model = load_model('nn_model.pt', device)
-    #model = load_model('fnl_model.pt', device)
-    model = load_model('fnl_model.pt', device)
+    model = load_model(model_path, device)
 
     feats, point_inds = get_features(model, scene_pcd_cleared, voxel_size, device)
 
@@ -422,11 +406,15 @@ def run_pipeline(pcd_file, voxel_size, cthres=.5, device='cuda:0', visualize=Fal
 # main func that load pcd and run the pipeline
 if __name__ == '__main__':
 
-    #pcd_file = './reconstructed_pcds/3.ply'
-    #pcd_file = '../tmp_data/cadcam_stereo/s1.ply'
+    # pcd filename is the first argument
+    pcd_file = sys.argv[1]
+    # check if exists
+    assert os.path.exists(pcd_file), 'File not found'
 
-    pcd_file = './real_mushrooms_pcds/reconstruction_pcd_20.pcd'
+    model_path = sys.argv[2]
+
+    assert os.path.exists(model_path), 'Model not found'
 
     voxel_size = 0.004
-    run_pipeline(pcd_file, voxel_size, cthres=.5, visualize=False, plane_removal=False)
+    run_pipeline(pcd_file, model_path, voxel_size, cthres=.5, visualize=False, plane_removal=False)
 
