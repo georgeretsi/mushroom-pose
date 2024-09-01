@@ -16,7 +16,7 @@ name_prefix = 'mpose_temp'
 from models.resunet import ResUNet3D
 
 model = ResUNet3D(1, 5)
-model.load_state_dict(torch.load('fnl_model.pt'))
+model.load_state_dict(torch.load('trained_model.pt'))
 model = model.cuda()
 
 
